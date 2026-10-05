@@ -1,5 +1,6 @@
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
+import { type CSSProperties } from 'react';
 
 export default function Welcome() {
     const { auth } = usePage<SharedData>().props;
@@ -218,7 +219,8 @@ export default function Welcome() {
                                     />
                                 </g>
                                 <g
-                                    style={{ mixBlendMode: 'plus-darker' }}
+                                    // Valor suportado só pelo WebKit, ausente dos tipos de CSS do React.
+                                    style={{ mixBlendMode: 'plus-darker' as CSSProperties['mixBlendMode'] }}
                                     className="translate-y-0 opacity-100 transition-all delay-300 duration-750 starting:translate-y-4 starting:opacity-0"
                                 >
                                     <path

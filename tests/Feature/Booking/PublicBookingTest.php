@@ -61,6 +61,20 @@ class PublicBookingTest extends TestCase
             );
     }
 
+    public function test_the_page_title_carries_the_tenant_brand()
+    {
+        $this->get($this->url('/'))->assertSee('<title inertia>Barbearia Navalha</title>', escape: false);
+    }
+
+    public function test_platform_routes_are_not_served_on_tenant_subdomains()
+    {
+        $this->get($this->url('login'))->assertNotFound();
+        $this->get($this->url('register'))->assertNotFound();
+        $this->get($this->url('dashboard'))->assertNotFound();
+
+        $this->get('http://localhost/login')->assertOk();
+    }
+
     public function test_hides_inactive_services_and_services_without_active_professionals()
     {
         Service::factory()->for($this->tenant)->create(['is_active' => false]);

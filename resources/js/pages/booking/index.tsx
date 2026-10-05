@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useEffect, useState } from 'react';
 
@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import TenantLayout from '@/layouts/tenant-layout';
 import { formatDuration, formatPrice } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { type SharedData } from '@/types';
 import { type AvailableSlot, type BookableDate, type BookableService } from '@/types/booking';
 
 interface BookingProps {
@@ -75,7 +74,6 @@ function useAvailableSlots(serviceId: number | null, professionalId: number | nu
 }
 
 export default function Booking({ services, dates }: BookingProps) {
-    const tenant = usePage<SharedData>().props.tenant!;
     const [date, setDate] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors } = useForm<BookingForm>({
@@ -123,7 +121,7 @@ export default function Booking({ services, dates }: BookingProps) {
 
     return (
         <TenantLayout>
-            <Head title={tenant.name} />
+            <Head title="Agendar horário" />
 
             <div className="space-y-8">
                 <div>

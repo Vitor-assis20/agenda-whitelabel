@@ -28,7 +28,7 @@ class TenantFactory extends Factory
             'timezone' => 'America/Sao_Paulo',
             'branding' => [
                 'primary_color' => fake()->hexColor(),
-                'logo_url' => null,
+                'logo_path' => null,
             ],
             'is_active' => true,
         ];

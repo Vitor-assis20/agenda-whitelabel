@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Panel\AgendaController;
 use App\Http\Controllers\Panel\AppointmentStatusController;
+use App\Http\Controllers\Panel\BrandingController;
 use App\Http\Controllers\Panel\ProfessionalController;
 use App\Http\Controllers\Panel\ServiceController;
 use App\Http\Controllers\Panel\SwitchTenantController;
@@ -33,5 +34,9 @@ Route::middleware(['auth', 'verified', 'panel'])
 
             Route::put('profissionais/{professional}/expediente', [WorkingHoursController::class, 'update'])
                 ->name('professionals.working-hours');
+
+            Route::get('marca', [BrandingController::class, 'edit'])->name('branding.edit');
+            // POST: o upload do logo vai como multipart/form-data.
+            Route::post('marca', [BrandingController::class, 'update'])->name('branding.update');
         });
     });

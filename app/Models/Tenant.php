@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Tenant extends Model
 {
@@ -38,6 +39,29 @@ class Tenant extends Model
         return [
             'branding' => 'array',
             'is_active' => 'boolean',
+        ];
+    }
+
+    /**
+     * Disco onde ficam os arquivos públicos do tenant (logo).
+     */
+    public const ASSETS_DISK = 'public';
+
+    /**
+     * Marca no formato consumido pelo front.
+     *
+     * O banco guarda o caminho do logo, não a URL: trocar de domínio ou de
+     * disco (ex.: S3) não deixa URLs antigas gravadas.
+     *
+     * @return array{primary_color: string|null, logo_url: string|null}
+     */
+    public function publicBranding(): array
+    {
+        $logoPath = $this->branding['logo_path'] ?? null;
+
+        return [
+            'primary_color' => $this->branding['primary_color'] ?? null,
+            'logo_url' => $logoPath ? Storage::disk(self::ASSETS_DISK)->url($logoPath) : null,
         ];
     }
 

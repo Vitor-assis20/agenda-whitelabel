@@ -5,7 +5,7 @@ import { TenantSwitcher } from '@/components/tenant-switcher';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BriefcaseBusiness, CalendarDays, ExternalLink, Users } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, ExternalLink, Palette, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const agendaItem: NavItem = { title: 'Agenda', url: '/painel/agenda', icon: CalendarDays };
@@ -14,6 +14,7 @@ const agendaItem: NavItem = { title: 'Agenda', url: '/painel/agenda', icon: Cale
 const managementItems: NavItem[] = [
     { title: 'Serviços', url: '/painel/servicos', icon: BriefcaseBusiness },
     { title: 'Profissionais', url: '/painel/profissionais', icon: Users },
+    { title: 'Marca', url: '/painel/marca', icon: Palette },
 ];
 
 export function AppSidebar() {

@@ -34,7 +34,7 @@ class ResolveTenant
         URL::defaults(['tenant' => $tenant->slug]);
 
         // Marca exibida nas páginas públicas (layout e título da aba).
-        Inertia::share('tenant', $tenant->only('name', 'slug', 'branding'));
+        Inertia::share('tenant', [...$tenant->only('name', 'slug'), 'branding' => $tenant->publicBranding()]);
 
         return $next($request);
     }

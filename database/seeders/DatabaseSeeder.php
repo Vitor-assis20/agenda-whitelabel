@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         $barbearia = $this->seedTenant($owner, [
             'name' => 'Barbearia Navalha',
             'slug' => 'barbearia-navalha',
-            'branding' => ['primary_color' => '#B45309', 'logo_url' => null],
+            'branding' => ['primary_color' => '#B45309', 'logo_path' => null],
         ], services: [
             ['name' => 'Corte', 'duration_minutes' => 30, 'price_cents' => 5000],
             ['name' => 'Barba', 'duration_minutes' => 30, 'price_cents' => 3500],
@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
         $this->seedTenant($owner, [
             'name' => 'Studio Zen',
             'slug' => 'studio-zen',
-            'branding' => ['primary_color' => '#0F766E', 'logo_url' => null],
+            'branding' => ['primary_color' => '#0F766E', 'logo_path' => null],
         ], services: [
             ['name' => 'Massagem relaxante', 'duration_minutes' => 60, 'price_cents' => 15000],
             ['name' => 'Drenagem linfática', 'duration_minutes' => 90, 'price_cents' => 18000],

@@ -110,7 +110,9 @@ class DatabaseSeeder extends Seeder
                 $startsAt = $cursor->copy();
                 $cursor->addMinutes($service->duration_minutes + fake()->randomElement([0, 30, 60]));
 
-                Appointment::create([
+                // forceCreate: created_at no passado simula uma reserva feita com
+                // antecedência, como na vida real (e habilita os lembretes na demo).
+                Appointment::forceCreate([
                     'professional_id' => $professional->id,
                     'service_id' => $service->id,
                     'customer_id' => fake()->randomElement($customers)->id,
@@ -119,6 +121,7 @@ class DatabaseSeeder extends Seeder
                     'status' => $status = fake()->randomElement($statuses),
                     'cancelled_at' => $status === AppointmentStatus::Cancelled ? $startsAt->copy()->subDay() : null,
                     'price_cents' => $service->price_cents,
+                    'created_at' => $startsAt->copy()->subDays(3)->utc(),
                 ]);
             }
         }

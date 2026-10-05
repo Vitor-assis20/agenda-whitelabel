@@ -4,6 +4,8 @@ namespace Tests\Feature\Panel;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
+use App\Notifications\AppointmentCancelled;
+use Illuminate\Support\Facades\Notification;
 
 class AppointmentStatusTest extends PanelTestCase
 {
@@ -50,6 +52,26 @@ class AppointmentStatusTest extends PanelTestCase
         // A exclusion constraint deixa de considerar o horário ocupado.
         $this->appointment($this->bruno, '10:00');
         $this->assertSame(2, Appointment::withoutGlobalScopes()->count());
+    }
+
+    public function test_the_customer_is_emailed_when_the_business_cancels()
+    {
+        Notification::fake();
+        $appointment = $this->appointment($this->bruno, '10:00');
+
+        $this->actingAs($this->owner)->patch($this->url($appointment), ['status' => 'cancelled']);
+
+        Notification::assertSentOnDemand(AppointmentCancelled::class, fn (AppointmentCancelled $notification) => ! $notification->byCustomer);
+    }
+
+    public function test_internal_status_changes_send_no_email()
+    {
+        Notification::fake();
+        $appointment = $this->appointment($this->bruno, '10:00', AppointmentStatus::Pending);
+
+        $this->actingAs($this->owner)->patch($this->url($appointment), ['status' => 'confirmed']);
+
+        Notification::assertNothingSent();
     }
 
     public function test_final_statuses_cannot_change()

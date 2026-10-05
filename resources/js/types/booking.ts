@@ -43,4 +43,7 @@ export interface BookedAppointment {
     time: string;
     duration_minutes: number;
     price_cents: number;
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+    /** URL assinada para cancelar; null quando o cliente não pode mais cancelar. */
+    cancel_url: string | null;
 }

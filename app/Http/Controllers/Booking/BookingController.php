@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Booking;
 
+use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\StoreBookingRequest;
 use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Professional;
 use App\Models\Service;
+use App\Scheduling\AppointmentNotifier;
+use App\Scheduling\AppointmentSummary;
 use App\Scheduling\Availability;
 use App\Scheduling\BookAppointment;
 use App\Scheduling\BookingFailed;
+use App\Scheduling\ChangeAppointmentStatus;
 use App\Scheduling\Slot;
 use App\Support\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
@@ -94,7 +98,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(StoreBookingRequest $request, BookAppointment $book): RedirectResponse
+    public function store(StoreBookingRequest $request, BookAppointment $book, AppointmentNotifier $notifier): RedirectResponse
     {
         try {
             // O cliente só é criado se a reserva der certo.
@@ -116,25 +120,36 @@ class BookingController extends Controller
             throw ValidationException::withMessages(['starts_at' => $e->getMessage()]);
         }
 
-        return redirect()->to(URL::signedRoute('booking.confirmation', $appointment));
+        // Depois do commit: se a reserva falhasse, nenhum e-mail teria saído.
+        $notifier->booked($appointment);
+
+        return redirect()->to(URL::signedRoute('booking.confirmation', $appointment))->with('just_booked', true);
     }
 
-    public function confirmation(Appointment $appointment): Response
+    /**
+     * Página do agendamento para o cliente: confirmação logo após reservar e
+     * destino dos links nos e-mails (detalhes e cancelamento).
+     */
+    public function confirmation(Request $request, Appointment $appointment): Response
     {
-        $appointment->load('service', 'professional', 'customer');
-        $startsAt = $appointment->starts_at->setTimezone($this->timezone())->locale(self::LOCALE);
-
         return Inertia::render('booking/confirmation', [
-            'appointment' => [
-                'service' => $appointment->service->name,
-                'professional' => $appointment->professional->name,
-                'customer' => $appointment->customer->name,
-                'date' => Str::ucfirst($startsAt->translatedFormat('l, j \d\e F \d\e Y')),
-                'time' => $startsAt->format('H:i'),
-                'duration_minutes' => $appointment->service->duration_minutes,
-                'price_cents' => $appointment->price_cents,
-            ],
+            'appointment' => AppointmentSummary::of($appointment)->toPageProps(),
+            'just_booked' => (bool) $request->session()->get('just_booked'),
         ]);
+    }
+
+    public function cancel(Appointment $appointment, ChangeAppointmentStatus $change, AppointmentNotifier $notifier): RedirectResponse
+    {
+        if (! $appointment->cancellableByCustomer()) {
+            throw ValidationException::withMessages([
+                'appointment' => 'Este agendamento não pode mais ser cancelado pelo link. Entre em contato com o estabelecimento.',
+            ]);
+        }
+
+        $change->handle($appointment, AppointmentStatus::Cancelled);
+        $notifier->cancelled($appointment, byCustomer: true);
+
+        return redirect()->to(URL::signedRoute('booking.confirmation', $appointment));
     }
 
     /**

@@ -1,13 +1,29 @@
+x-php: &php
+  image: agenda-whitelabel-php   # uma imagem para app, queue e scheduler
+  build:
+    context: ./docker/php
+    args: { UID: "${UID:-1000}", GID: "${GID:-1000}" }
+  volumes: [".:/var/www/html"]
+  depends_on:
+    db: { condition: service_healthy }
+    redis: { condition: service_started }
+
 services:
   app:
-    build:
-      context: ./docker/php
-      args: { UID: "${UID:-1000}", GID: "${GID:-1000}" }
-    volumes: [".:/var/www/html"]
+    <<: *php
     ports: ["5173:5173"]   # Vite
-    depends_on:
-      db: { condition: service_healthy }
-      redis: { condition: service_started }
+
+  # Processa a fila (e-mails). Reinicia até o "composer install" existir no primeiro setup.
+  queue:
+    <<: *php
+    command: php artisan queue:work --tries=3 --backoff=30
+    restart: unless-stopped
+
+  # Agendador do Laravel (lembretes a cada 5 minutos).
+  scheduler:
+    <<: *php
+    command: php artisan schedule:work
+    restart: unless-stopped
 
   web:
     image: nginx:1.27-alpine

@@ -2,13 +2,18 @@
 
 namespace Tests\Feature\Booking;
 
+use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Professional;
 use App\Models\Service;
 use App\Models\Tenant;
+use App\Notifications\AppointmentCancelled;
+use App\Notifications\BookingConfirmed;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -174,6 +179,103 @@ class PublicBookingTest extends TestCase
 
         $this->get(URL::signedRoute('booking.confirmation', ['tenant' => 'barbearia', 'appointment' => $alheio]))
             ->assertNotFound();
+    }
+
+    public function test_booking_emails_the_confirmation_to_the_customer()
+    {
+        Notification::fake();
+
+        $this->post($this->url('agendar'), $this->booking());
+
+        Notification::assertSentOnDemand(BookingConfirmed::class, function (BookingConfirmed $notification, array $channels, AnonymousNotifiable $notifiable) {
+            return $notifiable->routes['mail'] === ['joao@example.com' => 'João Silva']
+                && $notification->summary->tenantName === 'Barbearia Navalha'
+                && $notification->summary->time === '09:00'
+                // Vai para a fila só com dados prontos: o worker não tem tenant para recarregar models.
+                && ! str_contains(serialize($notification), 'App\\Models\\');
+        });
+    }
+
+    public function test_a_failed_booking_sends_no_email()
+    {
+        $this->post($this->url('agendar'), $this->booking(['email' => 'primeiro@example.com']));
+        Notification::fake();
+
+        $this->post($this->url('agendar'), $this->booking(['email' => 'segundo@example.com']));
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_the_page_tells_a_fresh_booking_apart_from_a_visit_by_email_link()
+    {
+        $response = $this->post($this->url('agendar'), $this->booking());
+        $link = $response->headers->get('Location');
+
+        $this->get($link)->assertInertia(fn (Assert $page) => $page
+            ->where('just_booked', true)
+            ->where('appointment.status', 'confirmed')
+            ->where('appointment.cancel_url', fn (?string $url) => str_contains((string) $url, '/cancelar?signature='))
+        );
+        $this->get($link)->assertInertia(fn (Assert $page) => $page->where('just_booked', false));
+    }
+
+    public function test_the_customer_cancels_through_the_signed_link()
+    {
+        $appointment = $this->bookAndGetAppointment();
+        Notification::fake();
+
+        $this->post($this->cancelUrl($appointment))->assertRedirect();
+
+        $this->assertSame(AppointmentStatus::Cancelled, $appointment->fresh()->status);
+        $this->assertNotNull($appointment->fresh()->cancelled_at);
+        Notification::assertSentOnDemand(AppointmentCancelled::class, fn (AppointmentCancelled $notification) => $notification->byCustomer);
+
+        // O horário volta a ser oferecido.
+        $this->getJson($this->slotsUrl('2026-11-10'))->assertJsonPath('slots.0.time', '09:00');
+    }
+
+    public function test_cancel_requires_a_valid_signature()
+    {
+        $appointment = $this->bookAndGetAppointment();
+
+        $this->post($this->url("agendamentos/{$appointment->id}/cancelar"))->assertForbidden();
+
+        $this->assertSame(AppointmentStatus::Confirmed, $appointment->fresh()->status);
+    }
+
+    public function test_cannot_cancel_after_the_appointment_started()
+    {
+        $appointment = $this->bookAndGetAppointment();
+        $this->travelTo(CarbonImmutable::parse('2026-11-10 09:10', self::TIMEZONE));
+
+        $this->post($this->cancelUrl($appointment))->assertSessionHasErrors('appointment');
+
+        $this->assertSame(AppointmentStatus::Confirmed, $appointment->fresh()->status);
+    }
+
+    public function test_a_cancelled_appointment_no_longer_offers_cancellation()
+    {
+        $appointment = $this->bookAndGetAppointment();
+        $this->post($this->cancelUrl($appointment));
+
+        $this->post($this->cancelUrl($appointment))->assertSessionHasErrors('appointment');
+        $this->get(URL::signedRoute('booking.confirmation', ['tenant' => 'barbearia', 'appointment' => $appointment]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('appointment.status', 'cancelled')
+                ->where('appointment.cancel_url', null)
+            );
+    }
+
+    private function bookAndGetAppointment(): Appointment
+    {
+        $this->post($this->url('agendar'), $this->booking());
+
+        return Appointment::withoutGlobalScopes()->sole();
+    }
+
+    private function cancelUrl(Appointment $appointment): string
+    {
+        return URL::signedRoute('booking.cancel', ['tenant' => 'barbearia', 'appointment' => $appointment]);
     }
 
     private function url(string $path): string

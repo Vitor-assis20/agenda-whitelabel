@@ -18,8 +18,13 @@ Route::domain('{tenant}.'.config('app.domain'))
             ->middleware('throttle:10,1')
             ->name('store');
 
-        // Assinada: o id sequencial sozinho não dá acesso ao agendamento.
+        // Assinadas: o id sequencial sozinho não dá acesso ao agendamento.
+        // O link chega ao cliente na confirmação e nos e-mails.
         Route::get('agendamentos/{appointment}', [BookingController::class, 'confirmation'])
             ->middleware('signed')
             ->name('confirmation');
+
+        Route::post('agendamentos/{appointment}/cancelar', [BookingController::class, 'cancel'])
+            ->middleware(['signed', 'throttle:10,1'])
+            ->name('cancel');
     });

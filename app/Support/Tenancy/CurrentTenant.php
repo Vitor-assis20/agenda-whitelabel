@@ -2,6 +2,7 @@
 
 namespace App\Support\Tenancy;
 
+use App\Enums\TenantRole;
 use App\Models\Tenant;
 
 /**
@@ -14,9 +15,20 @@ class CurrentTenant
 {
     private ?Tenant $tenant = null;
 
-    public function set(?Tenant $tenant): void
+    /**
+     * Papel do usuário autenticado no tenant atual (definido no painel).
+     */
+    private ?TenantRole $role = null;
+
+    public function set(?Tenant $tenant, ?TenantRole $role = null): void
     {
         $this->tenant = $tenant;
+        $this->role = $role;
+    }
+
+    public function role(): ?TenantRole
+    {
+        return $this->role;
     }
 
     public function get(): ?Tenant
@@ -44,13 +56,15 @@ class CurrentTenant
      */
     public function run(Tenant $tenant, callable $callback): mixed
     {
-        $previous = $this->tenant;
-        $this->tenant = $tenant;
+        [$previousTenant, $previousRole] = [$this->tenant, $this->role];
+
+        // O papel do usuário vale só para o tenant em que foi definido.
+        $this->set($tenant, $tenant->is($previousTenant) ? $previousRole : null);
 
         try {
             return $callback($tenant);
         } finally {
-            $this->tenant = $previous;
+            $this->set($previousTenant, $previousRole);
         }
     }
 }

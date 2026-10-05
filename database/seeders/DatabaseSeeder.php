@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        $this->seedTenant($owner, [
+        $barbearia = $this->seedTenant($owner, [
             'name' => 'Barbearia Navalha',
             'slug' => 'barbearia-navalha',
             'branding' => ['primary_color' => '#B45309', 'logo_url' => null],
@@ -44,6 +44,11 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Massagem relaxante', 'duration_minutes' => 60, 'price_cents' => 15000],
             ['name' => 'Drenagem linfática', 'duration_minutes' => 90, 'price_cents' => 18000],
         ], professionals: ['Ana Ribeiro']);
+
+        // Membro da equipe: no painel, vê e gerencia só a própria agenda.
+        $staff = User::factory()->create(['name' => 'Rafael Lima', 'email' => 'rafael@example.com']);
+        $barbearia->users()->attach($staff, ['role' => TenantRole::Staff->value]);
+        $barbearia->professionals()->where('name', 'Rafael Lima')->update(['user_id' => $staff->id]);
     }
 
     /**
@@ -51,7 +56,7 @@ class DatabaseSeeder extends Seeder
      * @param  list<array<string, mixed>>  $services
      * @param  list<string>  $professionals
      */
-    private function seedTenant(User $owner, array $attributes, array $services, array $professionals): void
+    private function seedTenant(User $owner, array $attributes, array $services, array $professionals): Tenant
     {
         $tenant = Tenant::factory()->withUser($owner, TenantRole::Owner)->create($attributes);
 
@@ -63,8 +68,8 @@ class DatabaseSeeder extends Seeder
                 $professional = Professional::factory()->for($tenant)->create(['name' => $name]);
                 $professional->services()->attach($services->pluck('id'));
 
-                // Terça a sábado, das 9h às 18h.
-                foreach (range(2, 6) as $weekday) {
+                // Segunda a sábado, das 9h às 18h.
+                foreach (range(1, 6) as $weekday) {
                     $professional->workingHours()->create([
                         'weekday' => $weekday,
                         'starts_at' => '09:00',
@@ -75,17 +80,28 @@ class DatabaseSeeder extends Seeder
                 $this->seedAgenda($tenant, $professional, $services->all(), $customers->all());
             }
         });
+
+        return $tenant;
     }
 
     /**
-     * Preenche os próximos dias úteis com horários em sequência, sem sobreposição.
+     * Preenche dos dois dias anteriores aos cinco seguintes com horários em
+     * sequência, sem sobreposição. O passado já vem com o desfecho registrado.
      *
      * @param  list<Service>  $services
      * @param  list<Customer>  $customers
      */
     private function seedAgenda(Tenant $tenant, Professional $professional, array $services, array $customers): void
     {
-        for ($day = 1; $day <= 5; $day++) {
+        for ($day = -2; $day <= 5; $day++) {
+            if (Carbon::today($tenant->timezone)->addDays($day)->isSunday()) {
+                continue;
+            }
+
+            $statuses = $day < 0
+                ? [AppointmentStatus::Completed, AppointmentStatus::Completed, AppointmentStatus::Completed, AppointmentStatus::NoShow, AppointmentStatus::Cancelled]
+                : [AppointmentStatus::Confirmed, AppointmentStatus::Confirmed, AppointmentStatus::Pending];
+
             // 9h no fuso do negócio; o cast UtcDateTime converte ao gravar.
             $cursor = Carbon::today($tenant->timezone)->addDays($day)->setTime(9, 0);
 
@@ -100,7 +116,8 @@ class DatabaseSeeder extends Seeder
                     'customer_id' => fake()->randomElement($customers)->id,
                     'starts_at' => $startsAt,
                     'ends_at' => $startsAt->copy()->addMinutes($service->duration_minutes),
-                    'status' => fake()->randomElement([AppointmentStatus::Confirmed, AppointmentStatus::Confirmed, AppointmentStatus::Pending]),
+                    'status' => $status = fake()->randomElement($statuses),
+                    'cancelled_at' => $status === AppointmentStatus::Cancelled ? $startsAt->copy()->subDay() : null,
                     'price_cents' => $service->price_cents,
                 ]);
             }

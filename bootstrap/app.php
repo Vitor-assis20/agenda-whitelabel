@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolvePanelTenant;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,8 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias(['tenant' => ResolveTenant::class]);
+        $middleware->alias([
+            'tenant' => ResolveTenant::class,
+            'panel' => ResolvePanelTenant::class,
+        ]);
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenant::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolvePanelTenant::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -7,6 +7,7 @@ use App\Support\Tenancy\CurrentTenant;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -31,6 +32,9 @@ class ResolveTenant
         // Os controllers não recebem o slug; route() o preenche sozinho.
         $request->route()->forgetParameter('tenant');
         URL::defaults(['tenant' => $tenant->slug]);
+
+        // Marca exibida nas páginas públicas (layout e título da aba).
+        Inertia::share('tenant', $tenant->only('name', 'slug', 'branding'));
 
         return $next($request);
     }

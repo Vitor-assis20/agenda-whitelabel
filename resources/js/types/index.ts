@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import type { Tenant } from './booking';
+import type { Panel } from './panel';
 
 export interface Auth {
     user: User;
@@ -26,7 +27,10 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
-    tenant: Tenant | null;
+    /** Presente só nas páginas públicas de um tenant. */
+    tenant?: Tenant;
+    /** Presente só nas páginas do painel. */
+    panel?: Panel;
     [key: string]: unknown;
 }
 

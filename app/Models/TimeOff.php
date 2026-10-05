@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,8 +33,8 @@ class TimeOff extends Model
     protected function casts(): array
     {
         return [
-            'starts_at' => 'immutable_datetime',
-            'ends_at' => 'immutable_datetime',
+            'starts_at' => UtcDateTime::class,
+            'ends_at' => UtcDateTime::class,
         ];
     }
 

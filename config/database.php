@@ -95,6 +95,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            // O Laravel envia datas sem offset; a sessão em UTC garante que sejam lidas como UTC.
+            'timezone' => 'UTC',
         ],
 
         'sqlsrv' => [

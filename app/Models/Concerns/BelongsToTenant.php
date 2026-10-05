@@ -31,6 +31,11 @@ trait BelongsToTenant
         });
     }
 
+    public function initializeBelongsToTenant(): void
+    {
+        $this->mergeCasts(['tenant_id' => 'integer']);
+    }
+
     /**
      * @return BelongsTo<Tenant, $this>
      */

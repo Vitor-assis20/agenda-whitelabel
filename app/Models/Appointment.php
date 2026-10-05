@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use App\Enums\AppointmentStatus;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,9 +40,9 @@ class Appointment extends Model
     protected function casts(): array
     {
         return [
-            'starts_at' => 'immutable_datetime',
-            'ends_at' => 'immutable_datetime',
-            'cancelled_at' => 'immutable_datetime',
+            'starts_at' => UtcDateTime::class,
+            'ends_at' => UtcDateTime::class,
+            'cancelled_at' => UtcDateTime::class,
             'status' => AppointmentStatus::class,
             'price_cents' => 'integer',
         ];

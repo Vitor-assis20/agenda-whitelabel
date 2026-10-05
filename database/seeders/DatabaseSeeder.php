@@ -86,8 +86,8 @@ class DatabaseSeeder extends Seeder
     private function seedAgenda(Tenant $tenant, Professional $professional, array $services, array $customers): void
     {
         for ($day = 1; $day <= 5; $day++) {
-            // 9h no fuso do negócio, gravado em UTC.
-            $cursor = Carbon::today($tenant->timezone)->addDays($day)->setTime(9, 0)->utc();
+            // 9h no fuso do negócio; o cast UtcDateTime converte ao gravar.
+            $cursor = Carbon::today($tenant->timezone)->addDays($day)->setTime(9, 0);
 
             for ($slot = 0; $slot < 4; $slot++) {
                 $service = fake()->randomElement($services);

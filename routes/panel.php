@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Panel\AgendaController;
 use App\Http\Controllers\Panel\AppointmentStatusController;
+use App\Http\Controllers\Panel\ProfessionalController;
+use App\Http\Controllers\Panel\ServiceController;
 use App\Http\Controllers\Panel\SwitchTenantController;
+use App\Http\Controllers\Panel\WorkingHoursController;
 use Illuminate\Support\Facades\Route;
 
 // Painel do negócio, no domínio principal.
@@ -16,4 +19,19 @@ Route::middleware(['auth', 'verified', 'panel'])
             ->name('appointments.status');
 
         Route::post('negocio', SwitchTenantController::class)->name('switch-tenant');
+
+        Route::middleware('can:manage-tenant')->group(function () {
+            Route::resource('servicos', ServiceController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->parameters(['servicos' => 'service'])
+                ->names('services');
+
+            Route::resource('profissionais', ProfessionalController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->parameters(['profissionais' => 'professional'])
+                ->names('professionals');
+
+            Route::put('profissionais/{professional}/expediente', [WorkingHoursController::class, 'update'])
+                ->name('professionals.working-hours');
+        });
     });

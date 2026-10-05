@@ -12,6 +12,41 @@ export interface Panel {
     };
 }
 
+export interface ManagedService {
+    id: number;
+    name: string;
+    description: string | null;
+    duration_minutes: number;
+    price_cents: number;
+    is_active: boolean;
+    professionals_count: number;
+    deletable: boolean;
+}
+
+export type WorkingHour = {
+    weekday: number;
+    /** HH:mm, no fuso do negócio. */
+    starts_at: string;
+    ends_at: string;
+};
+
+export interface ManagedProfessional {
+    id: number;
+    name: string;
+    email: string | null;
+    bio: string | null;
+    is_active: boolean;
+    service_ids: number[];
+    working_hours: WorkingHour[];
+    deletable: boolean;
+}
+
+export interface ServiceOption {
+    id: number;
+    name: string;
+    is_active: boolean;
+}
+
 export interface AgendaDate {
     value: string;
     label: string;

@@ -70,7 +70,10 @@ function AppointmentRow({ appointment }: { appointment: AgendaAppointment }) {
                     {appointment.service} · {formatPrice(appointment.price_cents)}
                 </div>
                 {appointment.customer.phone && (
-                    <a href={`tel:${appointment.customer.phone}`} className="text-muted-foreground inline-flex items-center gap-1 text-sm hover:underline">
+                    <a
+                        href={`tel:${appointment.customer.phone}`}
+                        className="text-muted-foreground inline-flex items-center gap-1 text-sm hover:underline"
+                    >
                         <Phone className="size-3" /> {appointment.customer.phone}
                     </a>
                 )}
@@ -80,7 +83,12 @@ function AppointmentRow({ appointment }: { appointment: AgendaAppointment }) {
             {appointment.actions.length > 0 && (
                 <div className="flex flex-wrap gap-2 sm:justify-end">
                     {appointment.actions.map((status) => (
-                        <Button key={status} size="sm" variant={ACTIONS[status]?.variant ?? 'outline'} onClick={() => changeStatus(appointment, status)}>
+                        <Button
+                            key={status}
+                            size="sm"
+                            variant={ACTIONS[status]?.variant ?? 'outline'}
+                            onClick={() => changeStatus(appointment, status)}
+                        >
                             {ACTIONS[status]?.label ?? STATUS[status].label}
                         </Button>
                     ))}
@@ -150,7 +158,9 @@ export default function Agenda({ date, summary, professionals }: AgendaProps) {
                             <section key={professional.id} className="rounded-xl border">
                                 <h2 className="border-b px-4 py-3 font-semibold">
                                     {professional.name}
-                                    <span className="text-muted-foreground ml-2 text-sm font-normal">{professional.appointments.length} atendimento(s)</span>
+                                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                                        {professional.appointments.length} atendimento(s)
+                                    </span>
                                 </h2>
                                 <ul className="divide-y">
                                     {professional.appointments.map((appointment) => (

@@ -14,6 +14,29 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # A suíte depende de recursos do Postgres (exclusion constraint, btree_gist),
+    # então roda no mesmo banco da aplicação, não em SQLite.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: agenda_test
+          POSTGRES_USER: agenda
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agenda -d agenda_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USERNAME: agenda
+      DB_PASSWORD: secret
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,8 +45,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.4
+          extensions: pdo_pgsql, pgsql, intl, gd
           tools: composer:v2
-          coverage: xdebug
+          coverage: none
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -36,9 +60,6 @@ jobs:
 
       - name: Build Assets
         run: npm run build
-
-      - name: Create SQLite Database
-        run: touch database/database.sqlite
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader

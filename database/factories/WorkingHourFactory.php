@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Models\Professional;
 use App\Models\Tenant;
+use App\Models\WorkingHour;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\WorkingHour>
+ * @extends Factory<WorkingHour>
  */
 class WorkingHourFactory extends Factory
 {

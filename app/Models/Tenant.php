@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TenantRole;
 use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenancy\TenantScope;
+use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Tenant extends Model
 {
-    /** @use HasFactory<\Database\Factories\TenantFactory> */
+    /** @use HasFactory<TenantFactory> */
     use HasFactory;
 
     /**

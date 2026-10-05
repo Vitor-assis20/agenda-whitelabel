@@ -186,7 +186,9 @@ export default function Booking({ services, dates }: BookingProps) {
                                     aria-pressed={day.value === date}
                                     className={cn(
                                         'flex w-16 shrink-0 flex-col items-center rounded-lg border py-2 transition',
-                                        day.value === date ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:border-primary/50',
+                                        day.value === date
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background hover:border-primary/50',
                                     )}
                                 >
                                     <span className="text-xs">{day.weekday}</span>
@@ -250,7 +252,13 @@ export default function Booking({ services, dates }: BookingProps) {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="phone">Telefone (opcional)</Label>
-                                    <Input id="phone" type="tel" autoComplete="tel" value={data.phone} onChange={(e) => setData('phone', e.target.value)} />
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        autoComplete="tel"
+                                        value={data.phone}
+                                        onChange={(e) => setData('phone', e.target.value)}
+                                    />
                                     <InputError message={errors.phone} />
                                 </div>
                             </div>

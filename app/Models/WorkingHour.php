@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\WorkingHourFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkingHour extends Model
 {
-    /** @use HasFactory<\Database\Factories\WorkingHourFactory> */
+    /** @use HasFactory<WorkingHourFactory> */
     use BelongsToTenant, HasFactory;
 
     /**

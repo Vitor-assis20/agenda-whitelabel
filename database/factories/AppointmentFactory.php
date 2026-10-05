@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\AppointmentStatus;
+use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Professional;
 use App\Models\Service;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Appointment>
+ * @extends Factory<Appointment>
  */
 class AppointmentFactory extends Factory
 {

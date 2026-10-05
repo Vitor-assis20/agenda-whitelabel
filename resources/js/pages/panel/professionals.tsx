@@ -58,7 +58,15 @@ function SaveFooter({ processing, onClose }: { processing: boolean; onClose: () 
     );
 }
 
-function ProfileDialog({ professional, services, onClose }: { professional: ManagedProfessional | null; services: ServiceOption[]; onClose: () => void }) {
+function ProfileDialog({
+    professional,
+    services,
+    onClose,
+}: {
+    professional: ManagedProfessional | null;
+    services: ServiceOption[];
+    onClose: () => void;
+}) {
     const { data, setData, post, put, processing, errors } = useForm<ProfessionalForm>({
         name: professional?.name ?? '',
         email: professional?.email ?? '',
@@ -141,8 +149,16 @@ function ScheduleDialog({ professional, onClose }: { professional: ManagedProfes
             data.hours.map((hours, i) => (i === index ? { ...hours, [field]: value } : hours)),
         );
     const add = (weekday: number, starts_at = '09:00', ends_at = '18:00') => setData('hours', [...data.hours, { weekday, starts_at, ends_at }]);
-    const remove = (index: number) => setData('hours', data.hours.filter((_, i) => i !== index));
-    const clearDay = (weekday: number) => setData('hours', data.hours.filter((hours) => hours.weekday !== weekday));
+    const remove = (index: number) =>
+        setData(
+            'hours',
+            data.hours.filter((_, i) => i !== index),
+        );
+    const clearDay = (weekday: number) =>
+        setData(
+            'hours',
+            data.hours.filter((hours) => hours.weekday !== weekday),
+        );
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -150,7 +166,11 @@ function ScheduleDialog({ professional, onClose }: { professional: ManagedProfes
     };
 
     return (
-        <FormDialog title={`Expediente de ${professional.name}`} description="Horários no fuso do seu negócio. Use mais de um intervalo para pausas." onClose={onClose}>
+        <FormDialog
+            title={`Expediente de ${professional.name}`}
+            description="Horários no fuso do seu negócio. Use mais de um intervalo para pausas."
+            onClose={onClose}
+        >
             <form onSubmit={submit} className="space-y-4">
                 <div className="divide-y rounded-lg border">
                     {WEEK_ORDER.map((weekday) => {
@@ -188,14 +208,30 @@ function ScheduleDialog({ professional, onClose }: { professional: ManagedProfes
                                                         value={hours.ends_at}
                                                         onChange={(e) => update(hours.index, 'ends_at', e.target.value)}
                                                     />
-                                                    <Button type="button" variant="ghost" size="icon" aria-label="Remover intervalo" onClick={() => remove(hours.index)}>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        aria-label="Remover intervalo"
+                                                        onClick={() => remove(hours.index)}
+                                                    >
                                                         <X />
                                                     </Button>
                                                 </div>
-                                                <InputError message={fieldErrors[`hours.${hours.index}.starts_at`] ?? fieldErrors[`hours.${hours.index}.ends_at`]} />
+                                                <InputError
+                                                    message={
+                                                        fieldErrors[`hours.${hours.index}.starts_at`] ?? fieldErrors[`hours.${hours.index}.ends_at`]
+                                                    }
+                                                />
                                             </div>
                                         ))}
-                                        <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => add(weekday, '14:00', '18:00')}>
+                                        <Button
+                                            type="button"
+                                            variant="link"
+                                            size="sm"
+                                            className="h-auto p-0"
+                                            onClick={() => add(weekday, '14:00', '18:00')}
+                                        >
                                             + Adicionar intervalo
                                         </Button>
                                     </div>
@@ -290,7 +326,12 @@ export default function Professionals({ professionals, services }: { professiona
                                     <Button variant="outline" size="sm" onClick={() => setEditing({ kind: 'schedule', professional })}>
                                         <Clock /> Expediente
                                     </Button>
-                                    <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => setEditing({ kind: 'profile', professional })}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="Editar"
+                                        onClick={() => setEditing({ kind: 'profile', professional })}
+                                    >
                                         <Pencil />
                                     </Button>
                                     {professional.deletable && (

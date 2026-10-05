@@ -146,7 +146,9 @@ export default function Branding({ business }: { business: { name: string; slug:
                                 accept="image/png,image/jpeg,image/webp"
                                 onChange={(e) => setData((form) => ({ ...form, logo: e.target.files?.[0] ?? null, remove_logo: false }))}
                             />
-                            <p className="text-muted-foreground text-xs">PNG, JPG ou WebP, até 1 MB, com pelo menos 64×64 pixels. Imagens quadradas ficam melhores.</p>
+                            <p className="text-muted-foreground text-xs">
+                                PNG, JPG ou WebP, até 1 MB, com pelo menos 64×64 pixels. Imagens quadradas ficam melhores.
+                            </p>
                             {business.branding.logo_url && !data.logo && (
                                 <label className="flex items-center gap-2 text-sm">
                                     <input type="checkbox" checked={data.remove_logo} onChange={(e) => setData('remove_logo', e.target.checked)} />
@@ -167,7 +169,9 @@ export default function Branding({ business }: { business: { name: string; slug:
 
                     <div className="space-y-2">
                         <div className="text-muted-foreground text-sm">Prévia</div>
-                        <PublicPagePreview tenant={{ name: data.name || business.name, branding: { primary_color: previewColor, logo_url: logoUrl } }} />
+                        <PublicPagePreview
+                            tenant={{ name: data.name || business.name, branding: { primary_color: previewColor, logo_url: logoUrl } }}
+                        />
                     </div>
                 </div>
             </div>

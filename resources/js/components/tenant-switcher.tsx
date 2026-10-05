@@ -12,7 +12,10 @@ export function TenantSwitcher() {
 
     return (
         <div className="px-2 group-data-[collapsible=icon]:hidden">
-            <Select value={String(panel.current.id)} onValueChange={(value) => router.post(route('panel.switch-tenant'), { tenant_id: Number(value) })}>
+            <Select
+                value={String(panel.current.id)}
+                onValueChange={(value) => router.post(route('panel.switch-tenant'), { tenant_id: Number(value) })}
+            >
                 <SelectTrigger aria-label="Negócio">
                     <SelectValue />
                 </SelectTrigger>

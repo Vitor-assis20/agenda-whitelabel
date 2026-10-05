@@ -4,13 +4,14 @@ namespace App\Models;
 
 use App\Casts\UtcDateTime;
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\TimeOffFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TimeOff extends Model
 {
-    /** @use HasFactory<\Database\Factories\TimeOffFactory> */
+    /** @use HasFactory<TimeOffFactory> */
     use BelongsToTenant, HasFactory;
 
     /**

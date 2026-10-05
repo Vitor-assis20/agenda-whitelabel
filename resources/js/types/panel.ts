@@ -78,5 +78,15 @@ export interface AgendaAppointment {
 export interface AgendaProfessional {
     id: number;
     name: string;
+    /** Folgas que caem no dia exibido. */
+    time_offs: { period: string; reason: string | null }[];
     appointments: AgendaAppointment[];
+}
+
+export interface ManagedTimeOff {
+    id: number;
+    professional: string;
+    /** Período já formatado no fuso do negócio. */
+    period: string;
+    reason: string | null;
 }

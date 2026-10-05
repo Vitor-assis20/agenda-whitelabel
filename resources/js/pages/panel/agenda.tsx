@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Phone } from 'lucide-react';
+import { CalendarOff, ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -100,7 +100,8 @@ function AppointmentRow({ appointment }: { appointment: AgendaAppointment }) {
 
 export default function Agenda({ date, summary, professionals }: AgendaProps) {
     const { errors } = usePage<SharedData & { errors: Record<string, string> }>().props;
-    const isEmpty = professionals.every((professional) => professional.appointments.length === 0);
+    // Aparece quem tem atendimento ou folga no dia.
+    const visible = professionals.filter((professional) => professional.appointments.length > 0 || professional.time_offs.length > 0);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -149,26 +150,31 @@ export default function Agenda({ date, summary, professionals }: AgendaProps) {
 
                 {professionals.length === 0 ? (
                     <p className="text-muted-foreground">Nenhum profissional ativo vinculado à sua conta.</p>
-                ) : isEmpty ? (
+                ) : visible.length === 0 ? (
                     <p className="text-muted-foreground">Nenhum agendamento neste dia.</p>
                 ) : (
-                    professionals
-                        .filter((professional) => professional.appointments.length > 0)
-                        .map((professional) => (
-                            <section key={professional.id} className="rounded-xl border">
-                                <h2 className="border-b px-4 py-3 font-semibold">
-                                    {professional.name}
-                                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                                        {professional.appointments.length} atendimento(s)
-                                    </span>
-                                </h2>
-                                <ul className="divide-y">
-                                    {professional.appointments.map((appointment) => (
-                                        <AppointmentRow key={appointment.id} appointment={appointment} />
-                                    ))}
-                                </ul>
-                            </section>
-                        ))
+                    visible.map((professional) => (
+                        <section key={professional.id} className="rounded-xl border">
+                            <h2 className="border-b px-4 py-3 font-semibold">
+                                {professional.name}
+                                <span className="text-muted-foreground ml-2 text-sm font-normal">
+                                    {professional.appointments.length} atendimento(s)
+                                </span>
+                            </h2>
+                            {professional.time_offs.map((timeOff, index) => (
+                                <div key={index} className="bg-muted/60 text-muted-foreground flex items-center gap-2 border-b px-4 py-2 text-sm">
+                                    <CalendarOff className="size-4" />
+                                    <span className="text-foreground font-medium">Folga · {timeOff.period}</span>
+                                    {timeOff.reason && <span>· {timeOff.reason}</span>}
+                                </div>
+                            ))}
+                            <ul className="divide-y">
+                                {professional.appointments.map((appointment) => (
+                                    <AppointmentRow key={appointment.id} appointment={appointment} />
+                                ))}
+                            </ul>
+                        </section>
+                    ))
                 )}
             </div>
         </AppLayout>

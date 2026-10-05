@@ -6,6 +6,7 @@ use App\Http\Controllers\Panel\BrandingController;
 use App\Http\Controllers\Panel\ProfessionalController;
 use App\Http\Controllers\Panel\ServiceController;
 use App\Http\Controllers\Panel\SwitchTenantController;
+use App\Http\Controllers\Panel\TimeOffController;
 use App\Http\Controllers\Panel\WorkingHoursController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,11 @@ Route::middleware(['auth', 'verified', 'panel'])
 
             Route::put('profissionais/{professional}/expediente', [WorkingHoursController::class, 'update'])
                 ->name('professionals.working-hours');
+
+            Route::resource('folgas', TimeOffController::class)
+                ->only(['index', 'store', 'destroy'])
+                ->parameters(['folgas' => 'timeOff'])
+                ->names('time-offs');
 
             Route::get('marca', [BrandingController::class, 'edit'])->name('branding.edit');
             // POST: o upload do logo vai como multipart/form-data.

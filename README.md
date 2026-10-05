@@ -39,6 +39,7 @@ SaaS multi-tenant de agendamento para negócios de serviço — barbearias, clí
 - Agenda do dia por profissional, com resumo e faturamento previsto
 - Ciclo de vida do agendamento: confirmar, concluir, marcar falta, cancelar
 - Cadastro de serviços, profissionais e expediente semanal (com pausas)
+- Folgas e bloqueios (dia inteiro ou parte do dia), com aviso dos agendamentos já marcados no período
 - Marca do negócio com prévia ao vivo da página pública
 - Papéis: dono e administradores gerenciam tudo; a equipe vê e altera só a própria agenda
 - Um usuário pode participar de vários negócios e alternar entre eles
@@ -87,7 +88,7 @@ Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos
 
 ## Qualidade
 
-- **143 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
+- **154 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
 - CI no GitHub Actions: testes com Postgres, Pint, Prettier, ESLint e `tsc` a cada push
 - Regras de negócio fora dos controllers: [`app/Scheduling`](app/Scheduling) concentra disponibilidade, reserva e mudanças de status
 
@@ -150,7 +151,6 @@ docker compose exec app php artisan test
 - Lembretes por WhatsApp
 - Remarcação pelo próprio cliente
 - Botões do e-mail na cor da marca
-- Cadastro de folgas e bloqueios pelo painel
 - Impedir que o mesmo cliente reserve dois horários simultâneos
 - Cadastro self-service de novos negócios
 - Aviso de agendamentos afetados ao reduzir o expediente

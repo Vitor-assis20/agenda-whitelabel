@@ -9,7 +9,19 @@ import { type CSSProperties } from 'react';
 export function brandStyle(color: string | null | undefined): CSSProperties {
     if (!color || !isHexColor(color)) return {};
 
-    return { '--primary': color, '--primary-foreground': readableTextColor(color), '--ring': color } as CSSProperties;
+    const foreground = readableTextColor(color);
+
+    // O tema usa @theme (não inline): --color-primary é resolvido no :root a
+    // partir de --primary, e as classes (bg-primary etc.) leem --color-*.
+    // Por isso as duas variáveis precisam ser sobrescritas aqui.
+    return {
+        '--primary': color,
+        '--primary-foreground': foreground,
+        '--ring': color,
+        '--color-primary': color,
+        '--color-primary-foreground': foreground,
+        '--color-ring': color,
+    } as CSSProperties;
 }
 
 function initials(name: string): string {

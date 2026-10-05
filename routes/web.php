@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Antes das rotas sem domínio: elas também casariam com os subdomínios.
+require __DIR__.'/booking.php';
+
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');

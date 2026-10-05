@@ -54,9 +54,7 @@ class Professional extends Model
      */
     public function services(): BelongsToMany
     {
-        // O pivot carrega tenant_id para satisfazer as chaves estrangeiras compostas.
-        return $this->belongsToMany(Service::class)
-            ->withPivotValue('tenant_id', $this->tenant_id);
+        return $this->belongsToMany(Service::class)->using(ProfessionalService::class);
     }
 
     /**

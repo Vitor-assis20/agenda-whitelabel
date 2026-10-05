@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Models\Tenant;
+use App\Support\Tenancy\CurrentTenant;
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Define o tenant atual a partir do subdomínio ({tenant}.APP_DOMAIN).
+ *
+ * Precisa rodar antes do SubstituteBindings (ver bootstrap/app.php) para
+ * que o route model binding já consulte dentro do tenant.
+ */
+class ResolveTenant
+{
+    public function __construct(private readonly CurrentTenant $current) {}
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $tenant = Tenant::query()
+            ->where('slug', $request->route('tenant'))
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $this->current->set($tenant);
+
+        // Os controllers não recebem o slug; route() o preenche sozinho.
+        $request->route()->forgetParameter('tenant');
+        URL::defaults(['tenant' => $tenant->slug]);
+
+        return $next($request);
+    }
+}

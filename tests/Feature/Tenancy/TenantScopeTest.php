@@ -97,4 +97,15 @@ class TenantScopeTest extends TestCase
         ]);
         $this->assertTrue($tenant->run(fn () => $professional->services()->first()->is($service)));
     }
+
+    public function test_professionals_can_be_eager_loaded_through_services()
+    {
+        $tenant = Tenant::factory()->create();
+        $service = Service::factory()->for($tenant)->create();
+        $service->professionals()->attach(Professional::factory()->count(2)->for($tenant)->create());
+
+        $loaded = $tenant->run(fn () => Service::with('professionals')->sole());
+
+        $this->assertCount(2, $loaded->professionals);
+    }
 }

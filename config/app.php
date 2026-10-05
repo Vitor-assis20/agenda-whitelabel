@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tenant Domain
+    |--------------------------------------------------------------------------
+    |
+    | Domínio base das páginas públicas: cada tenant é servido em
+    | {slug}.{domain}. Em desenvolvimento, *.localhost aponta para a
+    | própria máquina sem precisar editar o arquivo hosts.
+    |
+    */
+
+    'domain' => env('APP_DOMAIN', 'localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -108,16 +108,25 @@ class DatabaseSeeder extends Seeder
             for ($slot = 0; $slot < 4; $slot++) {
                 $service = fake()->randomElement($services);
                 $startsAt = $cursor->copy();
+                $endsAt = $startsAt->copy()->addMinutes($service->duration_minutes);
                 $cursor->addMinutes($service->duration_minutes + fake()->randomElement([0, 30, 60]));
+
+                // Um cliente livre nesse horário (a constraint appointments_customer_no_overlap recusaria outro).
+                $customer = collect($customers)->shuffle()->first(fn (Customer $candidate) => ! Appointment::query()
+                    ->blocking()
+                    ->where('customer_id', $candidate->id)
+                    ->where('starts_at', '<', $endsAt)
+                    ->where('ends_at', '>', $startsAt)
+                    ->exists());
 
                 // forceCreate: created_at no passado simula uma reserva feita com
                 // antecedência, como na vida real (e habilita os lembretes na demo).
                 Appointment::forceCreate([
                     'professional_id' => $professional->id,
                     'service_id' => $service->id,
-                    'customer_id' => fake()->randomElement($customers)->id,
+                    'customer_id' => $customer->id,
                     'starts_at' => $startsAt,
-                    'ends_at' => $startsAt->copy()->addMinutes($service->duration_minutes),
+                    'ends_at' => $endsAt,
                     'status' => $status = fake()->randomElement($statuses),
                     'cancelled_at' => $status === AppointmentStatus::Cancelled ? $startsAt->copy()->subDay() : null,
                     'price_cents' => $service->price_cents,

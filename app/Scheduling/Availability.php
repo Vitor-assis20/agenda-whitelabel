@@ -3,6 +3,7 @@
 namespace App\Scheduling;
 
 use App\Models\Appointment;
+use App\Models\Customer;
 use App\Models\Professional;
 use App\Models\Service;
 use App\Models\TimeOff;
@@ -67,6 +68,21 @@ class Availability
         $day = $start->setTimezone($professional->tenant->timezone)->startOfDay();
 
         return $this->failureFor($candidate, $this->schedule($professional, $day));
+    }
+
+    /**
+     * O cliente já tem um agendamento ativo que coincide com o horário
+     * (com qualquer profissional do negócio)?
+     */
+    public function customerIsBusy(Customer $customer, Service $service, CarbonInterface $startsAt): bool
+    {
+        $start = CarbonImmutable::instance($startsAt)->utc();
+
+        return $customer->tenant->run(fn () => $customer->appointments()
+            ->blocking()
+            ->where('starts_at', '<', $start->addMinutes($service->duration_minutes))
+            ->where('ends_at', '>', $start)
+            ->exists());
     }
 
     private function performs(Professional $professional, Service $service): bool

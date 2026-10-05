@@ -17,6 +17,8 @@ class BookAppointment
 {
     private const EXCLUSION_VIOLATION = '23P01';
 
+    private const CUSTOMER_CONSTRAINT = 'appointments_customer_no_overlap';
+
     public function __construct(private readonly Availability $availability) {}
 
     /**
@@ -37,6 +39,10 @@ class BookAppointment
             throw new BookingFailed($failure);
         }
 
+        if ($this->availability->customerIsBusy($customer, $service, $startsAt)) {
+            throw new BookingFailed(BookingFailure::CustomerBusy);
+        }
+
         $startsAt = CarbonImmutable::instance($startsAt);
 
         $appointment = new Appointment([
@@ -51,19 +57,29 @@ class BookAppointment
         ]);
         $appointment->tenant_id = $professional->tenant_id;
 
-        // A checagem acima cobre o caso comum. Se duas reservas passarem por ela
-        // ao mesmo tempo, a constraint appointments_no_overlap barra a segunda.
+        // As checagens acima cobrem o caso comum. Se duas reservas passarem por elas
+        // ao mesmo tempo, as exclusion constraints barram a segunda.
         // O savepoint mantém utilizável uma transação externa após a falha.
         try {
             DB::transaction(fn () => $appointment->save());
         } catch (QueryException $e) {
             if ($e->getCode() === self::EXCLUSION_VIOLATION) {
-                throw new BookingFailed(BookingFailure::SlotTaken, $e);
+                throw new BookingFailed($this->failureFor($e), $e);
             }
 
             throw $e;
         }
 
         return $appointment;
+    }
+
+    /**
+     * Qual das duas constraints barrou a reserva: o Postgres informa o nome na mensagem.
+     */
+    private function failureFor(QueryException $e): BookingFailure
+    {
+        return str_contains($e->getMessage(), self::CUSTOMER_CONSTRAINT)
+            ? BookingFailure::CustomerBusy
+            : BookingFailure::SlotTaken;
     }
 }

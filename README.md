@@ -56,7 +56,7 @@ EXCLUDE USING gist (
 ) WHERE (status IN ('pending', 'confirmed'))
 ```
 
-Intervalos semiabertos permitem horários colados (10h–11h e 11h–12h), e cancelamentos liberam o horário. A violação (`SQLSTATE 23P01`) vira uma mensagem amigável — *"Este horário acabou de ser ocupado"* — e há um teste que simula exatamente essa corrida ([`BookAppointment`](app/Scheduling/BookAppointment.php)).
+Intervalos semiabertos permitem horários colados (10h–11h e 11h–12h), e cancelamentos liberam o horário. Uma segunda constraint igual, por `customer_id`, impede que o mesmo cliente ocupe dois horários sobrepostos com profissionais diferentes; o nome da constraint violada diz qual mensagem mostrar. A migration que a cria verifica os dados antes e, se houver conflitos, para e lista os agendamentos a resolver, em vez de cancelar algo por conta própria. A violação (`SQLSTATE 23P01`) vira uma mensagem amigável — *"Este horário acabou de ser ocupado"* — e há um teste que simula exatamente essa corrida ([`BookAppointment`](app/Scheduling/BookAppointment.php)).
 
 ### Multi-tenancy com isolamento em duas camadas
 Banco único, `tenant_id` em todas as tabelas.
@@ -88,7 +88,7 @@ Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos
 
 ## Qualidade
 
-- **154 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
+- **158 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
 - CI no GitHub Actions: testes com Postgres, Pint, Prettier, ESLint e `tsc` a cada push
 - Regras de negócio fora dos controllers: [`app/Scheduling`](app/Scheduling) concentra disponibilidade, reserva e mudanças de status
 
@@ -151,7 +151,6 @@ docker compose exec app php artisan test
 - Lembretes por WhatsApp
 - Remarcação pelo próprio cliente
 - Botões do e-mail na cor da marca
-- Impedir que o mesmo cliente reserve dois horários simultâneos
 - Cadastro self-service de novos negócios
 - Aviso de agendamentos afetados ao reduzir o expediente
 

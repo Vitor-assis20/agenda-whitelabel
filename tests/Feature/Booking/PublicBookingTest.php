@@ -181,6 +181,20 @@ class PublicBookingTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_the_same_customer_cannot_book_two_professionals_at_the_same_time()
+    {
+        $bruno = Professional::factory()->for($this->tenant)->create();
+        $bruno->services()->attach($this->service);
+        $this->tenant->run(fn () => $bruno->workingHours()->create(['weekday' => 2, 'starts_at' => '09:00', 'ends_at' => '12:00']));
+
+        $this->post($this->url('agendar'), $this->booking())->assertSessionHasNoErrors();
+
+        $this->post($this->url('agendar'), $this->booking(['professional_id' => $bruno->id, 'starts_at' => '2026-11-10T12:30:00Z']))
+            ->assertSessionHasErrors(['starts_at' => 'Você já tem um agendamento que coincide com este horário. Escolha outro.']);
+
+        $this->assertSame(1, Appointment::withoutGlobalScopes()->count());
+    }
+
     public function test_booking_emails_the_confirmation_to_the_customer()
     {
         Notification::fake();

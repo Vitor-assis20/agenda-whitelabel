@@ -132,7 +132,10 @@ class BookAppointmentTest extends TestCase
     public function test_a_concurrent_booking_that_passes_the_check_is_stopped_by_the_database()
     {
         // Simula outra requisição que reservou o horário entre a checagem e o INSERT.
-        $this->mock(Availability::class)->shouldReceive('check')->andReturnNull();
+        $this->mock(Availability::class, function ($mock) {
+            $mock->shouldReceive('check')->andReturnNull();
+            $mock->shouldReceive('customerIsBusy')->andReturnFalse();
+        });
         Appointment::factory()->for($this->professional->tenant)->create([
             'professional_id' => $this->professional->id,
             'starts_at' => CarbonImmutable::parse('2026-11-10 10:00', self::TIMEZONE),
@@ -148,6 +151,41 @@ class BookAppointmentTest extends TestCase
         }
 
         $this->assertSame(1, Appointment::withoutGlobalScopes()->count());
+    }
+
+    public function test_rejects_a_customer_who_already_has_an_appointment_at_that_time()
+    {
+        // Mesmo cliente, outro profissional, horário sobreposto.
+        Appointment::factory()->for($this->professional->tenant)->create([
+            'customer_id' => $this->customer->id,
+            'starts_at' => CarbonImmutable::parse('2026-11-10 09:30', self::TIMEZONE),
+            'ends_at' => CarbonImmutable::parse('2026-11-10 10:30', self::TIMEZONE),
+        ]);
+
+        $this->assertBookingFails(BookingFailure::CustomerBusy, '2026-11-10 10:00');
+        $this->book('2026-11-10 10:30'); // logo em seguida, tudo bem
+    }
+
+    public function test_a_concurrent_booking_by_the_same_customer_is_stopped_by_the_database()
+    {
+        // Simula a outra reserva do cliente gravada entre a checagem e o INSERT.
+        $this->mock(Availability::class, function ($mock) {
+            $mock->shouldReceive('check')->andReturnNull();
+            $mock->shouldReceive('customerIsBusy')->andReturnFalse();
+        });
+        Appointment::factory()->for($this->professional->tenant)->create([
+            'customer_id' => $this->customer->id,
+            'starts_at' => CarbonImmutable::parse('2026-11-10 10:00', self::TIMEZONE),
+            'ends_at' => CarbonImmutable::parse('2026-11-10 11:00', self::TIMEZONE),
+        ]);
+
+        try {
+            $this->book('2026-11-10 10:30');
+            $this->fail('A reserva simultânea do mesmo cliente deveria ter sido rejeitada.');
+        } catch (BookingFailed $e) {
+            // O profissional estava livre: quem barrou foi a constraint do cliente.
+            $this->assertSame(BookingFailure::CustomerBusy, $e->reason);
+        }
     }
 
     private function book(string $localTime): Appointment

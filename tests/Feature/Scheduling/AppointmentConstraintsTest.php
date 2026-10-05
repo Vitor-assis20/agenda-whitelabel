@@ -95,6 +95,23 @@ class AppointmentConstraintsTest extends TestCase
         );
     }
 
+    public function test_the_same_customer_cannot_be_in_two_places_at_once()
+    {
+        $first = $this->book('2026-11-10 10:00', 60);
+        $other = Professional::factory()->for($this->professional->tenant)->create();
+        $sameCustomer = fn (string $startsAt, AppointmentStatus $status = AppointmentStatus::Confirmed) => Appointment::factory()
+            ->for($this->professional->tenant)
+            ->at($startsAt)
+            ->status($status)
+            ->create(['professional_id' => $other->id, 'customer_id' => $first->customer_id]);
+
+        $this->assertRejectedByDatabase(self::EXCLUSION_VIOLATION, fn () => $sameCustomer('2026-11-10 10:30'));
+
+        $sameCustomer('2026-11-10 11:00'); // colado: permitido
+        $sameCustomer('2026-11-10 10:00', AppointmentStatus::Cancelled); // cancelado não ocupa
+        $this->assertSame(3, Appointment::withoutGlobalScopes()->count());
+    }
+
     public function test_appointment_must_end_after_it_starts()
     {
         $this->assertRejectedByDatabase(

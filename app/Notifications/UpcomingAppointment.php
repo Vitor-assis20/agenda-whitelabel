@@ -35,6 +35,6 @@ class UpcomingAppointment extends AppointmentNotification
 
     protected function action(): array
     {
-        return ['Não vai conseguir ir? Cancele aqui', $this->summary->manageUrl];
+        return ['Não vai conseguir ir? Remarque ou cancele', $this->summary->manageUrl];
     }
 }

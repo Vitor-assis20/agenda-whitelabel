@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CalendarCheck, CircleCheck, CircleX, LoaderCircle } from 'lucide-react';
 import { useState } from 'react';
 
@@ -12,19 +12,21 @@ interface ConfirmationProps {
     appointment: BookedAppointment;
     /** Acabou de reservar (e não chegou pelo link do e-mail). */
     just_booked: boolean;
+    just_rescheduled: boolean;
 }
 
-function heading(appointment: BookedAppointment, justBooked: boolean) {
+function heading(appointment: BookedAppointment, justBooked: boolean, justRescheduled: boolean) {
     if (appointment.status === 'cancelled') return { Icon: CircleX, title: 'Agendamento cancelado', className: 'text-muted-foreground' };
+    if (justRescheduled) return { Icon: CircleCheck, title: 'Agendamento remarcado!', className: 'text-primary' };
     if (justBooked) return { Icon: CircleCheck, title: 'Agendamento confirmado!', className: 'text-primary' };
 
     return { Icon: CalendarCheck, title: 'Seu agendamento', className: 'text-primary' };
 }
 
-export default function Confirmation({ appointment, just_booked }: ConfirmationProps) {
+export default function Confirmation({ appointment, just_booked, just_rescheduled }: ConfirmationProps) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const [cancelling, setCancelling] = useState(false);
-    const { Icon, title, className } = heading(appointment, just_booked);
+    const { Icon, title, className } = heading(appointment, just_booked, just_rescheduled);
     const firstName = appointment.customer.split(' ')[0];
 
     const details = [
@@ -67,11 +69,20 @@ export default function Confirmation({ appointment, just_booked }: ConfirmationP
 
                 <InputError message={errors.appointment} />
 
-                {appointment.cancel_url && (
-                    <Button variant="outline" onClick={cancel} disabled={cancelling}>
-                        {cancelling && <LoaderCircle className="size-4 animate-spin" />}
-                        Cancelar agendamento
-                    </Button>
+                {(appointment.reschedule_url || appointment.cancel_url) && (
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {appointment.reschedule_url && (
+                            <Button asChild>
+                                <Link href={appointment.reschedule_url}>Remarcar</Link>
+                            </Button>
+                        )}
+                        {appointment.cancel_url && (
+                            <Button variant="outline" onClick={cancel} disabled={cancelling}>
+                                {cancelling && <LoaderCircle className="size-4 animate-spin" />}
+                                Cancelar agendamento
+                            </Button>
+                        )}
+                    </div>
                 )}
             </div>
         </TenantLayout>

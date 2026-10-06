@@ -21,7 +21,7 @@ class BookingConfirmed extends AppointmentNotification
 
     protected function action(): array
     {
-        return ['Ver ou cancelar agendamento', $this->summary->manageUrl];
+        return ['Ver, remarcar ou cancelar', $this->summary->manageUrl];
     }
 
     protected function outro(): string

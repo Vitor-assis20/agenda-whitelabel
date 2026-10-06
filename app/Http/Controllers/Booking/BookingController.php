@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Booking;
 
 use App\Enums\AppointmentStatus;
+use App\Http\Controllers\Booking\Concerns\PresentsSchedule;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Booking\StoreBookingRequest;
 use App\Models\Appointment;
@@ -15,13 +16,11 @@ use App\Scheduling\Availability;
 use App\Scheduling\BookAppointment;
 use App\Scheduling\BookingFailed;
 use App\Scheduling\ChangeAppointmentStatus;
-use App\Scheduling\Slot;
 use App\Support\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -31,14 +30,12 @@ use Inertia\Response;
 
 class BookingController extends Controller
 {
-    /**
-     * Quantos dias à frente o cliente pode agendar.
-     */
-    private const DAYS_AHEAD = 14;
+    use PresentsSchedule;
 
-    private const LOCALE = 'pt_BR';
-
-    public function __construct(private readonly CurrentTenant $current) {}
+    public function __construct(
+        private readonly CurrentTenant $current,
+        private readonly Availability $availability,
+    ) {}
 
     public function show(): Response
     {
@@ -60,41 +57,24 @@ class BookingController extends Controller
                     ->map(fn (Professional $professional) => $professional->only('id', 'name'))
                     ->values(),
             ]),
-            'dates' => $this->bookableDates()->map(fn (CarbonImmutable $date) => [
-                'value' => $date->toDateString(),
-                'weekday' => Str::ucfirst(rtrim($date->translatedFormat('D'), '.')),
-                'day' => $date->format('d'),
-                'month' => rtrim($date->translatedFormat('M'), '.'),
-            ]),
+            'dates' => $this->presentDays($this->availability->bookableDays($this->timezone())),
         ]);
     }
 
-    public function slots(Request $request, Availability $availability): JsonResponse
+    public function slots(Request $request): JsonResponse
     {
-        $dates = $this->bookableDates();
-
         $validated = $request->validate([
             'service_id' => ['required', 'integer'],
             'professional_id' => ['required', 'integer'],
-            'date' => [
-                'required',
-                'date_format:Y-m-d',
-                'after_or_equal:'.$dates->first()->toDateString(),
-                'before_or_equal:'.$dates->last()->toDateString(),
-            ],
+            'date' => ['required', ...$this->bookableDateRules($this->availability->bookableDays($this->timezone()))],
         ]);
 
         // Consultas sob o TenantScope: ids de outro tenant resultam em 404.
         $service = Service::findOrFail($validated['service_id']);
         $professional = Professional::findOrFail($validated['professional_id']);
 
-        $slots = $availability->slots($professional, $service, $validated['date']);
-
         return response()->json([
-            'slots' => array_map(fn (Slot $slot) => [
-                'starts_at' => $slot->startsAt->toIso8601ZuluString(),
-                'time' => $slot->startsAt->setTimezone($this->timezone())->format('H:i'),
-            ], $slots),
+            'slots' => $this->presentSlots($this->availability->slots($professional, $service, $validated['date']), $this->timezone()),
         ]);
     }
 
@@ -135,6 +115,7 @@ class BookingController extends Controller
         return Inertia::render('booking/confirmation', [
             'appointment' => AppointmentSummary::of($appointment)->toPageProps(),
             'just_booked' => (bool) $request->session()->get('just_booked'),
+            'just_rescheduled' => (bool) $request->session()->get('just_rescheduled'),
         ]);
     }
 
@@ -150,18 +131,6 @@ class BookingController extends Controller
         $notifier->cancelled($appointment, byCustomer: true);
 
         return redirect()->to(URL::signedRoute('booking.confirmation', $appointment));
-    }
-
-    /**
-     * Próximos dias a partir de hoje, no fuso do tenant.
-     *
-     * @return Collection<int, CarbonImmutable>
-     */
-    private function bookableDates(): Collection
-    {
-        $today = CarbonImmutable::now($this->timezone())->locale(self::LOCALE)->startOfDay();
-
-        return collect(range(0, self::DAYS_AHEAD - 1))->map(fn (int $offset) => $today->addDays($offset));
     }
 
     private function timezone(): string

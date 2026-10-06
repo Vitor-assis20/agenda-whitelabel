@@ -29,6 +29,7 @@ final readonly class AppointmentSummary
         public bool $cancellable,
         public string $manageUrl,
         public string $cancelUrl,
+        public string $rescheduleUrl,
         public string $bookingUrl,
     ) {}
 
@@ -60,6 +61,7 @@ final readonly class AppointmentSummary
                 cancellable: $appointment->cancellableByCustomer(),
                 manageUrl: URL::signedRoute('booking.confirmation', $parameters),
                 cancelUrl: URL::signedRoute('booking.cancel', $parameters),
+                rescheduleUrl: URL::signedRoute('booking.reschedule', $parameters),
                 bookingUrl: route('booking.show', ['tenant' => $tenant->slug]),
             );
         });
@@ -84,7 +86,9 @@ final readonly class AppointmentSummary
             'duration_minutes' => $this->durationMinutes,
             'price_cents' => $this->priceCents,
             'status' => $this->status,
+            // Cancelar e remarcar valem nas mesmas condições: ativo e antes do início.
             'cancel_url' => $this->cancellable ? $this->cancelUrl : null,
+            'reschedule_url' => $this->cancellable ? $this->rescheduleUrl : null,
         ];
     }
 }

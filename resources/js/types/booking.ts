@@ -46,4 +46,6 @@ export interface BookedAppointment {
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
     /** URL assinada para cancelar; null quando o cliente não pode mais cancelar. */
     cancel_url: string | null;
+    /** URL assinada da página de remarcação; null nas mesmas condições do cancelamento. */
+    reschedule_url: string | null;
 }

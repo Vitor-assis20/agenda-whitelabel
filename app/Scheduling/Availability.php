@@ -10,12 +10,18 @@ use App\Models\TimeOff;
 use App\Models\WorkingHour;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 /**
  * Disponibilidade = expediente − folgas − agendamentos ativos.
  *
  * O expediente é cadastrado no fuso do tenant; todo o resto é comparado
  * em UTC, como instantes absolutos.
+ *
+ * $ignoring desconsidera um agendamento existente: na remarcação, o horário
+ * atual do próprio cliente não pode contar como ocupado.
  */
 class Availability
 {
@@ -25,18 +31,35 @@ class Availability
     public const INTERVAL_MINUTES = 15;
 
     /**
+     * Quantos dias à frente o cliente pode agendar (ou remarcar).
+     */
+    public const BOOKING_WINDOW_DAYS = 14;
+
+    /**
+     * Dias em que o cliente pode agendar, a partir de hoje, no fuso do tenant.
+     *
+     * @return Collection<int, CarbonImmutable>
+     */
+    public function bookableDays(string $timezone): Collection
+    {
+        $today = CarbonImmutable::now($timezone)->locale('pt_BR')->startOfDay();
+
+        return collect(range(0, self::BOOKING_WINDOW_DAYS - 1))->map(fn (int $offset) => $today->addDays($offset));
+    }
+
+    /**
      * Horários livres para o serviço em um dia (data local do tenant, Y-m-d).
      *
      * @return list<Slot>
      */
-    public function slots(Professional $professional, Service $service, string $date): array
+    public function slots(Professional $professional, Service $service, string $date, ?Appointment $ignoring = null): array
     {
         if (! $this->performs($professional, $service)) {
             return [];
         }
 
         $day = CarbonImmutable::parse($date, $professional->tenant->timezone)->startOfDay();
-        $schedule = $this->schedule($professional, $day);
+        $schedule = $this->schedule($professional, $day, $ignoring);
         $slots = [];
 
         foreach ($schedule->windows as $window) {
@@ -57,7 +80,7 @@ class Availability
     /**
      * Motivo pelo qual o horário não pode ser reservado, ou null se estiver livre.
      */
-    public function check(Professional $professional, Service $service, CarbonInterface $startsAt): ?BookingFailure
+    public function check(Professional $professional, Service $service, CarbonInterface $startsAt, ?Appointment $ignoring = null): ?BookingFailure
     {
         if (! $this->performs($professional, $service)) {
             return BookingFailure::ServiceNotOffered;
@@ -67,18 +90,18 @@ class Availability
         $candidate = new Slot($start, $start->addMinutes($service->duration_minutes));
         $day = $start->setTimezone($professional->tenant->timezone)->startOfDay();
 
-        return $this->failureFor($candidate, $this->schedule($professional, $day));
+        return $this->failureFor($candidate, $this->schedule($professional, $day, $ignoring));
     }
 
     /**
      * O cliente já tem um agendamento ativo que coincide com o horário
      * (com qualquer profissional do negócio)?
      */
-    public function customerIsBusy(Customer $customer, Service $service, CarbonInterface $startsAt): bool
+    public function customerIsBusy(Customer $customer, Service $service, CarbonInterface $startsAt, ?Appointment $ignoring = null): bool
     {
         $start = CarbonImmutable::instance($startsAt)->utc();
 
-        return $customer->tenant->run(fn () => $customer->appointments()
+        return $customer->tenant->run(fn () => $this->excluding($customer->appointments(), $ignoring)
             ->blocking()
             ->where('starts_at', '<', $start->addMinutes($service->duration_minutes))
             ->where('ends_at', '>', $start)
@@ -113,7 +136,7 @@ class Availability
      *
      * @param  CarbonImmutable  $day  Início do dia, no fuso do tenant.
      */
-    private function schedule(Professional $professional, CarbonImmutable $day): DaySchedule
+    private function schedule(Professional $professional, CarbonImmutable $day, ?Appointment $ignoring): DaySchedule
     {
         $from = $day->utc();
         $to = $day->addDay()->utc();
@@ -134,7 +157,7 @@ class Availability
                 ->get()
                 ->map(fn (TimeOff $timeOff) => new Slot($timeOff->starts_at, $timeOff->ends_at))
                 ->all(),
-            appointments: $professional->appointments()
+            appointments: $this->excluding($professional->appointments(), $ignoring)
                 ->blocking()
                 ->where('starts_at', '<', $to)
                 ->where('ends_at', '>', $from)
@@ -142,5 +165,14 @@ class Availability
                 ->map(fn (Appointment $appointment) => new Slot($appointment->starts_at, $appointment->ends_at))
                 ->all(),
         ));
+    }
+
+    /**
+     * @param  HasMany<Appointment, *>  $appointments
+     * @return HasMany<Appointment, *>
+     */
+    private function excluding(HasMany $appointments, ?Appointment $ignoring): HasMany
+    {
+        return $appointments->when($ignoring, fn (Builder|HasMany $query) => $query->whereKeyNot($ignoring->getKey()));
     }
 }

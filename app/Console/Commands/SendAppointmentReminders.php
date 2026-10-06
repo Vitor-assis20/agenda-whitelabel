@@ -25,9 +25,9 @@ class SendAppointmentReminders extends Command
                 ->blocking()
                 ->where('starts_at', '>', now()->addHours($kind->supersededWithinHours()))
                 ->where('starts_at', '<=', now()->addHours($kind->hours()))
-                // Só se o agendamento já existia quando chegou a hora do lembrete:
-                // quem reserva em cima da hora recebe só a confirmação.
-                ->whereRaw('created_at <= starts_at - make_interval(hours => ?)', [$kind->hours()])
+                // Só se o horário atual já estava reservado quando chegou a hora do
+                // lembrete: quem reserva ou remarca em cima da hora não recebe o de 24h.
+                ->whereRaw('booked_at <= starts_at - make_interval(hours => ?)', [$kind->hours()])
                 ->whereDoesntHave('reminders', fn ($query) => $query->where('kind', $kind))
                 ->with('tenant');
 

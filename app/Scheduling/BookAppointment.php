@@ -15,10 +15,6 @@ use InvalidArgumentException;
 
 class BookAppointment
 {
-    private const EXCLUSION_VIOLATION = '23P01';
-
-    private const CUSTOMER_CONSTRAINT = 'appointments_customer_no_overlap';
-
     public function __construct(private readonly Availability $availability) {}
 
     /**
@@ -63,23 +59,9 @@ class BookAppointment
         try {
             DB::transaction(fn () => $appointment->save());
         } catch (QueryException $e) {
-            if ($e->getCode() === self::EXCLUSION_VIOLATION) {
-                throw new BookingFailed($this->failureFor($e), $e);
-            }
-
-            throw $e;
+            throw ($failure = ScheduleConflict::from($e)) ? new BookingFailed($failure, $e) : $e;
         }
 
         return $appointment;
-    }
-
-    /**
-     * Qual das duas constraints barrou a reserva: o Postgres informa o nome na mensagem.
-     */
-    private function failureFor(QueryException $e): BookingFailure
-    {
-        return str_contains($e->getMessage(), self::CUSTOMER_CONSTRAINT)
-            ? BookingFailure::CustomerBusy
-            : BookingFailure::SlotTaken;
     }
 }

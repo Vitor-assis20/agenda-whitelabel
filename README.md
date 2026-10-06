@@ -30,10 +30,10 @@ SaaS multi-tenant de agendamento para negócios de serviço — barbearias, clí
 - Fluxo serviço → profissional → data e horário → dados, com horários livres calculados em tempo real
 - Marca do negócio (cor, logo, nome) aplicada em toda a página, inclusive no título da aba
 - Confirmação por link assinado; cliente recorrente reconhecido pelo e-mail
-- O cliente cancela pelo próprio link enquanto o atendimento não começou
+- O cliente remarca ou cancela pelo próprio link enquanto o atendimento não começou
 
 **E-mails ao cliente** (com a marca do negócio, enviados por fila)
-- Confirmação da reserva, lembretes 24h e 2h antes, aviso de cancelamento
+- Confirmação da reserva, lembretes 24h e 2h antes, avisos de remarcação e de cancelamento
 
 **Painel** (dono, administradores e equipe)
 - Agenda do dia por profissional, com resumo e faturamento previsto
@@ -76,6 +76,7 @@ Os e-mails saem por fila (Redis) e os lembretes por um comando agendado a cada 5
 - **Lembrete nunca enviado duas vezes.** Antes de enviar, o comando registra o envio numa tabela com `UNIQUE (appointment_id, kind)`; se dois agendadores rodarem juntos, só um consegue inserir ([`SendAppointmentReminders`](app/Console/Commands/SendAppointmentReminders.php)).
 - **Lembrete que faz sentido.** Só vale se o agendamento já existia quando chegou a hora dele (quem reserva em cima da hora recebe só a confirmação), e o de 24h é descartado quando o de 2h já está no prazo — um agendador que volta de uma pausa não manda "é amanhã" a uma hora do atendimento.
 - **E-mail só depois do commit:** se a reserva falha, nenhum e-mail sai.
+- **Remarcação reinicia os lembretes.** O lembrete usa `booked_at` (quando o horário atual foi reservado), não `created_at`: quem remarca para daqui a 20 horas não recebe um "lembrete de 24h" logo depois do aviso de remarcação.
 
 ### Whitelabel de verdade
 - A cor do negócio sobrescreve as variáveis de tema do Tailwind, e todos os componentes herdam a marca.
@@ -84,11 +85,11 @@ Os e-mails saem por fila (Redis) e os lembretes por um comando agendado a cada 5
 - Logos SVG são recusados (podem conter scripts e seriam servidos pelo mesmo domínio); o banco guarda o caminho do arquivo, não a URL.
 
 ### Disponibilidade
-Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos a cada 15 minutos. A agenda do dia é carregada em três consultas e os horários são calculados em memória ([`Availability`](app/Scheduling/Availability.php)).
+Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos a cada 15 minutos. Na remarcação, o horário atual do próprio agendamento não conta como ocupado, para que dê para adiantar 30 minutos um atendimento de 1 hora; a troca é um `UPDATE` protegido pelas mesmas constraints da reserva. A agenda do dia é carregada em três consultas e os horários são calculados em memória ([`Availability`](app/Scheduling/Availability.php)).
 
 ## Qualidade
 
-- **158 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
+- **170 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
 - CI no GitHub Actions: testes com Postgres, Pint, Prettier, ESLint e `tsc` a cada push
 - Regras de negócio fora dos controllers: [`app/Scheduling`](app/Scheduling) concentra disponibilidade, reserva e mudanças de status
 
@@ -125,7 +126,9 @@ docker compose exec app npm run build    # ou "npm run dev" para hot reload
 docker compose restart queue scheduler   # worker e agendador, agora com as dependências instaladas
 ```
 
-O `queue` processa os e-mails e o `scheduler` dispara os lembretes a cada 5 minutos. Para enviar os lembretes na hora: `docker compose exec app php artisan appointments:send-reminders`.
+O `queue` processa os e-mails e o `scheduler` dispara os lembretes a cada 5 minutos.
+
+> **Ao mudar o código:** rode as migrations antes de subir o código novo e reinicie o worker (`php artisan queue:restart`). O worker mantém as classes na memória e não consegue processar jobs criados por uma versão mais nova delas. Para enviar os lembretes na hora: `docker compose exec app php artisan appointments:send-reminders`.
 
 | Endereço | O que é |
 | --- | --- |
@@ -149,7 +152,6 @@ docker compose exec app php artisan test
 ## Próximos passos
 
 - Lembretes por WhatsApp
-- Remarcação pelo próprio cliente
 - Botões do e-mail na cor da marca
 - Cadastro self-service de novos negócios
 - Aviso de agendamentos afetados ao reduzir o expediente

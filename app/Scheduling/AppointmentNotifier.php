@@ -6,6 +6,7 @@ use App\Enums\ReminderKind;
 use App\Models\Appointment;
 use App\Notifications\AppointmentCancelled;
 use App\Notifications\AppointmentNotification;
+use App\Notifications\AppointmentRescheduled;
 use App\Notifications\BookingConfirmed;
 use App\Notifications\UpcomingAppointment;
 use Illuminate\Support\Facades\Notification;
@@ -29,6 +30,13 @@ class AppointmentNotifier
         $summary = AppointmentSummary::of($appointment);
 
         $this->send($summary, new UpcomingAppointment($summary, $kind));
+    }
+
+    public function rescheduled(Appointment $appointment, AppointmentSummary $before): void
+    {
+        $summary = AppointmentSummary::of($appointment);
+
+        $this->send($summary, new AppointmentRescheduled($summary, $before->date, $before->time));
     }
 
     public function cancelled(Appointment $appointment, bool $byCustomer): void

@@ -32,7 +32,16 @@ class Appointment extends Model
         'price_cents',
         'notes',
         'cancelled_at',
+        'booked_at',
     ];
+
+    protected static function booted(): void
+    {
+        // Pelo relógio da aplicação (não o now() do banco), que os testes controlam.
+        static::creating(function (self $appointment) {
+            $appointment->booked_at ??= now();
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -45,6 +54,7 @@ class Appointment extends Model
             'starts_at' => UtcDateTime::class,
             'ends_at' => UtcDateTime::class,
             'cancelled_at' => UtcDateTime::class,
+            'booked_at' => UtcDateTime::class,
             'status' => AppointmentStatus::class,
             'price_cents' => 'integer',
         ];

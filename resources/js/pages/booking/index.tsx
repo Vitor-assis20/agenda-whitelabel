@@ -2,6 +2,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useEffect, useState } from 'react';
 
+import { DateStrip, SlotGrid } from '@/components/booking/schedule-picker';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,47 +178,16 @@ export default function Booking({ services, dates }: BookingProps) {
 
                 {service && data.professional_id && (
                     <Step number={3} title="Data e horário">
-                        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
-                            {dates.map((day) => (
-                                <button
-                                    key={day.value}
-                                    type="button"
-                                    onClick={() => selectDate(day.value)}
-                                    aria-pressed={day.value === date}
-                                    className={cn(
-                                        'flex w-16 shrink-0 flex-col items-center rounded-lg border py-2 transition',
-                                        day.value === date
-                                            ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-background hover:border-primary/50',
-                                    )}
-                                >
-                                    <span className="text-xs">{day.weekday}</span>
-                                    <span className="text-lg font-semibold">{day.day}</span>
-                                    <span className="text-xs">{day.month}</span>
-                                </button>
-                            ))}
-                        </div>
+                        <DateStrip dates={dates} selected={date} onSelect={selectDate} />
 
-                        {date &&
-                            (loading ? (
-                                <LoaderCircle className="text-muted-foreground size-5 animate-spin" />
-                            ) : slots.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">Nenhum horário livre neste dia. Tente outra data.</p>
-                            ) : (
-                                <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                                    {slots.map((slot) => (
-                                        <Button
-                                            key={slot.starts_at}
-                                            type="button"
-                                            size="sm"
-                                            variant={slot.starts_at === data.starts_at ? 'default' : 'outline'}
-                                            onClick={() => setData('starts_at', slot.starts_at)}
-                                        >
-                                            {slot.time}
-                                        </Button>
-                                    ))}
-                                </div>
-                            ))}
+                        {date && (
+                            <SlotGrid
+                                slots={slots}
+                                loading={loading}
+                                selected={data.starts_at}
+                                onSelect={(startsAt) => setData('starts_at', startsAt)}
+                            />
+                        )}
                         <InputError message={errors.starts_at} />
                     </Step>
                 )}

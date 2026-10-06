@@ -17,6 +17,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class UtcDateTime implements CastsAttributes
 {
+    /**
+     * Sem isso, o Eloquent devolve o próprio objeto atribuído (mutável, com
+     * microssegundos e no fuso de origem) em vez do valor normalizado.
+     */
+    public bool $withoutObjectCaching = true;
+
     public function get(Model $model, string $key, mixed $value, array $attributes): ?CarbonImmutable
     {
         return $value === null ? null : CarbonImmutable::parse($value)->utc();

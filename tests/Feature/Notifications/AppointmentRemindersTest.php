@@ -120,6 +120,7 @@ class AppointmentRemindersTest extends PanelTestCase
     {
         // Sem fake: a fila síncrona serializa a notificação como o worker faria,
         // e o comando roda sem tenant no contexto.
+        $this->tenant->update(['branding' => ['primary_color' => '#b45309', 'logo_path' => null]]);
         $appointment = $this->bookedAt('2026-11-08 12:00');
 
         $this->runRemindersAt('2026-11-09 10:30');
@@ -136,6 +137,9 @@ class AppointmentRemindersTest extends PanelTestCase
         $this->assertSame($customer->email, $email->getTo()[0]->getAddress());
         $this->assertStringContainsString("/agendamentos/{$appointment->id}?signature=", $email->getHtmlBody());
         $this->assertStringNotContainsString(config('app.name'), $email->getHtmlBody());
+        // Botão na cor da marca, com texto legível sobre ela.
+        $this->assertStringContainsString('background-color: #b45309', $email->getHtmlBody());
+        $this->assertMatchesRegularExpression('/border-top: 8px solid #b45309;[^"]*color: #ffffff/', $email->getHtmlBody());
     }
 
     private function bookedAt(string $localDateTime): Appointment

@@ -21,7 +21,7 @@ Olá, {{ $summary->customerFirstName() }}! {{ $intro }}
 </x-mail::table>
 
 @if ($actionUrl)
-<x-mail::button :url="$actionUrl">
+<x-mail::button :url="$actionUrl" :brand="$summary->brandColor">
 {{ $actionText }}
 </x-mail::button>
 @endif

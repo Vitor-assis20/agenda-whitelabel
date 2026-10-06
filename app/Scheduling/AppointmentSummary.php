@@ -3,6 +3,7 @@
 namespace App\Scheduling;
 
 use App\Models\Appointment;
+use App\Support\BrandColor;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
@@ -17,6 +18,7 @@ final readonly class AppointmentSummary
     public function __construct(
         public int $appointmentId,
         public string $tenantName,
+        public ?string $brandColor,
         public string $service,
         public string $professional,
         public string $customerName,
@@ -49,6 +51,7 @@ final readonly class AppointmentSummary
             return new self(
                 appointmentId: $appointment->id,
                 tenantName: $tenant->name,
+                brandColor: BrandColor::isValid($color = $tenant->branding['primary_color'] ?? null) ? $color : null,
                 service: $appointment->service->name,
                 professional: $appointment->professional->name,
                 customerName: $appointment->customer->name,

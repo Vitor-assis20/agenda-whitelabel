@@ -82,6 +82,7 @@ Os e-mails saem por fila (Redis) e os lembretes por um comando agendado a cada 5
 - A cor do negócio sobrescreve as variáveis de tema do Tailwind, e todos os componentes herdam a marca.
 - O texto sobre a cor (preto ou branco) é escolhido pelo **contraste WCAG**, então qualquer cor escolhida pelo dono continua legível.
 - O nome da plataforma não aparece nas páginas do cliente — nem na aba do navegador, nem nos e-mails (remetente, cabeçalho, rodapé e `<title>`).
+- Os botões dos e-mails usam a cor do negócio, com o mesmo cálculo de contraste do front portado para PHP ([`BrandColor`](app/Support/BrandColor.php)).
 - Logos SVG são recusados (podem conter scripts e seriam servidos pelo mesmo domínio); o banco guarda o caminho do arquivo, não a URL.
 
 ### Disponibilidade
@@ -89,7 +90,7 @@ Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos
 
 ## Qualidade
 
-- **170 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
+- **177 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
 - CI no GitHub Actions: testes com Postgres, Pint, Prettier, ESLint e `tsc` a cada push
 - Regras de negócio fora dos controllers: [`app/Scheduling`](app/Scheduling) concentra disponibilidade, reserva e mudanças de status
 
@@ -152,7 +153,6 @@ docker compose exec app php artisan test
 ## Próximos passos
 
 - Lembretes por WhatsApp
-- Botões do e-mail na cor da marca
 - Cadastro self-service de novos negócios
 - Aviso de agendamentos afetados ao reduzir o expediente
 

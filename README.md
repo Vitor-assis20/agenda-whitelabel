@@ -90,7 +90,7 @@ Horários livres = **expediente − folgas − agendamentos ativos**, oferecidos
 
 ## Qualidade
 
-- **177 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
+- **178 testes** (feature e integração), rodando em **PostgreSQL real** — as regras mais importantes vivem no banco e precisam ser testadas lá
 - CI no GitHub Actions: testes com Postgres, Pint, Prettier, ESLint e `tsc` a cada push
 - Regras de negócio fora dos controllers: [`app/Scheduling`](app/Scheduling) concentra disponibilidade, reserva e mudanças de status
 

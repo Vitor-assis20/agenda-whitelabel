@@ -2,7 +2,7 @@
 
 Este documento resume o que foi construído no repositório **Agenda**, um SaaS multi-tenant e whitelabel de agendamento online para negócios de serviço (barbearias, clínicas, estúdios). O [README](../README.md) descreve o produto e as decisões técnicas; aqui está a ordem em que tudo foi feito e o que cada etapa entregou.
 
-**Período:** 05/10/2026 a 06/10/2026 · **17 commits** · **173 métodos de teste** rodando em PostgreSQL real
+**Período:** 05/10/2026 a 06/10/2026 · **17 commits** · **178 testes** rodando em PostgreSQL real
 
 **Stack:** Laravel 12 · PHP 8.4 · React 19 · TypeScript · Inertia.js · Tailwind CSS 4 · PostgreSQL 17 · Redis · Docker
 

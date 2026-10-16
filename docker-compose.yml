@@ -1,5 +1,6 @@
 x-php: &php
-  image: agenda-whitelabel-php   # uma imagem para app, queue e scheduler
+  # Nome por projeto: um clone com outro nome de projeto não disputa a mesma imagem.
+  image: ${COMPOSE_PROJECT_NAME}-php   # uma imagem para todos os serviços PHP
   build:
     context: ./docker/php
     args: { UID: "${UID:-1000}", GID: "${GID:-1000}" }
@@ -7,6 +8,7 @@ x-php: &php
   depends_on:
     db: { condition: service_healthy }
     redis: { condition: service_started }
+  restart: unless-stopped
 
 services:
   app:
@@ -27,6 +29,7 @@ services:
 
   web:
     image: nginx:1.27-alpine
+    restart: unless-stopped
     ports: ["8000:80"]
     volumes:
       - ".:/var/www/html:ro"
@@ -35,6 +38,7 @@ services:
 
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: agenda
       POSTGRES_USER: agenda
@@ -50,9 +54,11 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
 
   mailpit:
     image: axllent/mailpit
+    restart: unless-stopped
     ports: ["8025:8025"]   # UI; SMTP em mailpit:1025
 
 volumes:
